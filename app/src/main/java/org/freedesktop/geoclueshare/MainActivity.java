@@ -1,7 +1,8 @@
 package org.freedesktop.geoclueshare;
 
-import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.content.Intent;
+import android.os.Bundle;
 
 /*
  * Copyright (C) 2015 Ankit (Verma)
@@ -25,11 +26,15 @@ import android.support.v7.app.ActionBarActivity;
 
 public class MainActivity extends ActionBarActivity {
 
+    private static final String TAG = "MainActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         getSupportActionBar().setTitle(R.string.main_activity_label);
+        final Intent locationServiceIntent = new Intent(this, LocationService.class);
+        startService(locationServiceIntent);
     }
 }
