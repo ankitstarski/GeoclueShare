@@ -1,8 +1,13 @@
 package org.freedesktop.geoclueshare;
 
-import android.support.v7.app.ActionBarActivity;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.SwitchCompat;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 
 /*
  * Copyright (C) 2015 Ankit (Verma)
@@ -35,6 +40,30 @@ public class MainActivity extends ActionBarActivity {
 
         getSupportActionBar().setTitle(R.string.main_activity_label);
         final Intent locationServiceIntent = new Intent(this, LocationService.class);
-        startService(locationServiceIntent);
+
+        SwitchCompat toggleService = (SwitchCompat) findViewById(R.id.service_toggle);
+
+        toggleService.setChecked(isServiceRunning(LocationService.class));
+
+        toggleService.setOnCheckedChangeListener(new Switch.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    startService(locationServiceIntent);
+                } else {
+                    stopService(locationServiceIntent);
+                }
+            }
+        });
+    }
+
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -2,6 +2,7 @@
     <string name="app_name">GeoclueShare</string>
     <string name="main_activity_label">Location Sharing</string>
 
-    <string name="hello_world">Hello world!</string>
+    <string name="service_toggle_text">Location Sharing</string>
+    <string name="service_toggle_description">Turn on to share your location with other devices</string>
     <string name="action_settings">Settings</string>
 </resources>
