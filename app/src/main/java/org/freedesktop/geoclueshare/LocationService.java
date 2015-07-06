@@ -8,7 +8,10 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -43,6 +46,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
 
     private static final String TAG = "LocationService";
     private LocationManager locationManager;
+    private NetworkListener networkListener;
 
     /**
      * The minimum time between updates in milliseconds.
@@ -54,18 +58,39 @@ public class LocationService extends Service implements LocationListener, GpsSta
      */
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 1;
 
+    /**
+     * The code for stopping Location updates.
+     */
+    public static final int MESSAGE_STOP_GPS = 0;
+
+    /**
+     * The code for starting Location updates.
+     */
+    public static final int MESSAGE_START_GPS = 1;
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Service started");
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                MIN_TIME_BW_UPDATES_GPS,
-                MIN_DISTANCE_CHANGE_FOR_UPDATES,
-                this);
-        locationManager.addNmeaListener(this);
+        Handler handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message message) {
+                switch (message.what) {
+                    case MESSAGE_START_GPS:
+                        startGps();
+                        Log.d(TAG, "GPS start");
+                        break;
+                    case MESSAGE_STOP_GPS:
+                        stopGps();
+                        Log.d(TAG, "GPS stop");
+                }
+            }
+        };
+
+        networkListener = new NetworkListener(handler);
+        networkListener.execute();
 
         return Service.START_STICKY;
     }
@@ -85,8 +110,8 @@ public class LocationService extends Service implements LocationListener, GpsSta
     public void onDestroy() {
         super.onDestroy();
 
-        locationManager.removeUpdates(this);
-        locationManager.removeNmeaListener(this);
+        stopGps();
+        networkListener.cancel(true);
 
         Log.d(TAG, "Service destroyed");
     }
@@ -95,8 +120,22 @@ public class LocationService extends Service implements LocationListener, GpsSta
     public void onNmeaReceived(long timestamp, String nmea) {
         String nmeaTimestamp = nmea.split(",")[1];
         if (nmea.startsWith("$GPGGA") && nmeaTimestamp.matches("[0-9]{6}")) {
-            Log.d(TAG, "GGA Sentence: " + nmea);
+            NetworkListener.sendData(nmea);
         }
+    }
+
+    private void startGps() {
+        locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER,
+                MIN_TIME_BW_UPDATES_GPS,
+                MIN_DISTANCE_CHANGE_FOR_UPDATES,
+                this);
+        locationManager.addNmeaListener(this);
+    }
+
+    private void stopGps() {
+        locationManager.removeUpdates(this);
+        locationManager.removeNmeaListener(this);
     }
 
     @Override
