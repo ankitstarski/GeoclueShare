@@ -1,0 +1,23 @@
+GEOCLUE SHARE
+=============
+
+This is the repository of an Android application named GeoclueShare.
+GeoclueShare shares location information from android GPS to Geoclue [1].
+
+This application is a part of GSoC 2015 project [2].
+
+REQUIREMENTS FOR DEVELOPMENT
+============================
+
+ * Java Development Kit (JDK) 7 or higher.
+ * Android Studio.
+ * Android SDK with build tools and support libraries installed.
+ * Android SDK build tools version 21.1.1 and target API 21 preferred.
+ * Android device with GPS capabilities and running android version 2.2 or
+   higher (for testing).
+
+REFERENCES
+==========
+
+ [1] https://wiki.freedesktop.org/www/Software/GeoClue/
+ [2] https://wiki.gnome.org/Outreach/SummerOfCode/2015/Projects/Ankit_GPSSharing
