@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -49,6 +50,11 @@ public class LocationService extends Service implements LocationListener, GpsSta
     private NetworkListener networkListener;
 
     /**
+     * The unique identifier for current Android device.
+     */
+    public static String deviceId;
+
+    /**
      * The that value goes into the `accuracy` feild of mDNS service's TXT record.
      */
     public static String accuracy = "exact";
@@ -77,7 +83,12 @@ public class LocationService extends Service implements LocationListener, GpsSta
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Service started");
 
+        Zeroconf.attainLock(this);
+
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(),
+                Settings.Secure.ANDROID_ID);
 
         Handler handler = new Handler(Looper.getMainLooper()) {
             @Override
@@ -117,6 +128,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
 
         stopGps();
         networkListener.cancel(true);
+        Zeroconf.releaseLock();
 
         Log.d(TAG, "Service destroyed");
     }

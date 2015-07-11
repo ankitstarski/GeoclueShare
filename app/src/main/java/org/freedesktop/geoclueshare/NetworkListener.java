@@ -47,6 +47,7 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
     private ServerSocketChannel server = null;
     private Handler handler;
     private static HashMap<String, String> pendingData;
+    Zeroconf mdns;
 
     /**
      * Total number of clients currently connected to the application.
@@ -71,7 +72,11 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
     protected Void doInBackground(Void... params) {
         Selector selector;
         Iterator i;
+
         Log.d(TAG, "Started Listening");
+
+        mdns = new Zeroconf();
+        mdns.broadcastService(LocationService.deviceId, PORT);
 
         pendingData = new HashMap<String, String>();
 
@@ -217,6 +222,8 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
     protected void onCancelled() {
         super.onCancelled();
         try {
+            if (mdns != null)
+                mdns.unregisterService();
             if (server != null)
                 server.close();
             numberOfClients = 0;
