@@ -49,6 +49,11 @@ public class LocationService extends Service implements LocationListener, GpsSta
     private NetworkListener networkListener;
 
     /**
+     * The that value goes into the `accuracy` feild of mDNS service's TXT record.
+     */
+    public static String accuracy = "exact";
+
+    /**
      * The minimum time between updates in milliseconds.
      */
     private static final long MIN_TIME_BW_UPDATES_GPS = 1000;
