@@ -3,5 +3,7 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="main_text_size">18sp</dimen>
+    <dimen name="sub_text_size">14sp</dimen>
     <dimen name="right_block_size">60dp</dimen>
+    <dimen name="standard_margin">12dp</dimen>
 </resources>

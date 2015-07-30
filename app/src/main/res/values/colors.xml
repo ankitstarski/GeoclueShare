@@ -1,4 +1,7 @@
 <resources>
     <color name="main_text_color">#2e3436</color>
     <color name="description_color">#848484</color>
+    <color name="bottom_border_color">#d3d7cf</color>
+    <color name="status_text_color">#888a85</color>
+    <color name="activity_background">#fafafa</color>
 </resources>

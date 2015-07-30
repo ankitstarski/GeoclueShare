@@ -172,6 +172,8 @@ public class LocationService extends Service implements LocationListener, GpsSta
 
     @Override
     public void onProviderDisabled(String provider) {
-
+        if (provider.equals(LocationManager.GPS_PROVIDER)) {
+            MainActivity.promptForLocation();
+        }
     }
 }

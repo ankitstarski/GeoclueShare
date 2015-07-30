@@ -166,6 +166,7 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
 
         Log.d(TAG, "Client connected");
         numberOfClients++;
+        MainActivity.setConnectedDevices(numberOfClients);
 
         Log.d(TAG, "Number of clients: " + numberOfClients);
         if (numberOfClients == 1) {
@@ -189,6 +190,7 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
             Log.d(TAG, "Client disconnected");
 
             numberOfClients--;
+            MainActivity.setConnectedDevices(numberOfClients);
 
             Log.d(TAG, "Number of clients: " + numberOfClients);
             if (numberOfClients == 0) {
@@ -227,6 +229,8 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
             if (server != null)
                 server.close();
             numberOfClients = 0;
+            MainActivity.setConnectedDevices(numberOfClients);
+
             if (pendingData != null)
                 pendingData.clear();
         } catch (IOException e) {
