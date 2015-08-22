@@ -16,6 +16,11 @@ import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 /*
  * Copyright (C) 2015 Ankit (Verma)
  *
@@ -48,6 +53,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
     private static final String TAG = "LocationService";
     private LocationManager locationManager;
     private NetworkListener networkListener;
+    private String ggaSentence;
 
     /**
      * The unique identifier for current Android device.
@@ -97,6 +103,10 @@ public class LocationService extends Service implements LocationListener, GpsSta
                     case MESSAGE_START_GPS:
                         startGps();
                         Log.d(TAG, "GPS start");
+                        Location loc = locationManager
+                                .getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                        if (loc != null)
+                            NetworkListener.sendData(getGgaFromLocation(loc));
                         break;
                     case MESSAGE_STOP_GPS:
                         stopGps();
@@ -138,6 +148,16 @@ public class LocationService extends Service implements LocationListener, GpsSta
         String nmeaTimestamp = nmea.split(",")[1];
         if (nmea.startsWith("$GPGGA") && nmeaTimestamp.matches("[0-9]{6}")) {
             NetworkListener.sendData(nmea);
+            ggaSentence = null;
+        } else if (nmea.startsWith("$GPGGA")) {
+            if (ggaSentence == null || ggaSentence.length() == 0)
+                return;
+            nmeaTimestamp = ggaSentence.split(",")[1];
+
+            if (!nmeaTimestamp.matches("[0-9]{6}"))
+                return;
+            NetworkListener.sendData(ggaSentence);
+            ggaSentence = null;
         }
     }
 
@@ -157,7 +177,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
 
     @Override
     public void onLocationChanged(Location location) {
-
+        ggaSentence = getGgaFromLocation(location);
     }
 
     @Override
@@ -175,5 +195,86 @@ public class LocationService extends Service implements LocationListener, GpsSta
         if (provider.equals(LocationManager.GPS_PROVIDER)) {
             MainActivity.promptForLocation();
         }
+    }
+
+    private String getGgaFromLocation(Location location) {
+        String gga;
+        Boolean hasAltitude = location.hasAltitude();
+
+        Date date = new Date(location.getTime());
+        DateFormat format = new SimpleDateFormat("HHmmss");
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String time = format.format(date);
+
+        if (hasAltitude) {
+            gga = "$GPGGA,%s,%s,%s,1,,%.1f,%.1f,M,,M,,";
+            gga = String.format(gga,
+                    time,
+                    getLatitudeString(location.getLatitude()),
+                    getLongitudeString(location.getLongitude()),
+                    getHdopFromAccuracy(location.getAccuracy()),
+                    location.getAltitude());
+        } else {
+            gga = "$GPGGA,%s,%s,%s,1,,%.1f,,M,,M,,";
+            gga = String.format(gga,
+                    time,
+                    getLatitudeString(location.getLatitude()),
+                    getLongitudeString(location.getLongitude()),
+                    getHdopFromAccuracy(location.getAccuracy()));
+        }
+
+        gga = addChecksumToGga(gga);
+
+        return gga;
+    }
+
+    private double getHdopFromAccuracy(double accuracy) {
+        /* FIXME: These are rough estimates based on the information given in the link below:
+         *        http://en.wikipedia.org/wiki/Dilution_of_precision_%28GPS%29#Meaning_of_DOP_Values
+         */
+        if (accuracy <= 0.5)
+            return 0.5;
+        else if (accuracy <= 1.0)
+            return 1.5;
+        else if (accuracy <= 3.0)
+            return 3.5;
+        else if (accuracy <= 50.0)
+            return 7.5;
+        else if (accuracy <= 100.0)
+            return 15.0;
+        else
+            return 30.0;
+    }
+
+    private String getLatitudeString(double lat) {
+        String latStr = "%02d%06.3f,%s";
+
+        int degrees = (int) Math.abs(lat);
+        double minutes = Math.abs((lat - (int) lat) * 60);
+        String symbol = lat >= 0 ? "N" : "S";
+
+        latStr = String.format(latStr, degrees, minutes, symbol);
+        return latStr;
+    }
+
+    private String getLongitudeString(double lon) {
+        String lonStr = "%03d%06.3f,%s";
+
+        int degrees = (int) Math.abs(lon);
+        double minutes = Math.abs((lon - (int) lon) * 60);
+        String symbol = lon >= 0 ? "E" : "W";
+
+        lonStr = String.format(lonStr, degrees, minutes, symbol);
+        return lonStr;
+    }
+
+    private String addChecksumToGga(String gga) {
+        int checksum = 0;
+
+        for (int i = 1, n = gga.length(); i < n; i++) {
+            checksum ^= (int) gga.charAt(i);
+        }
+
+        return String.format("%s*%02X", gga, checksum);
     }
 }
