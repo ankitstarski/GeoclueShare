@@ -15,4 +15,7 @@
     <string name="location_prompt_dialog">This application needs High location accuracy to work. Do you want to change location Accuracy?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+
+    <string name="notif_title">Location Sharing is running</string>
+    <string name="notif_content">Close it if you aren\'t using it.</string>
 </resources>

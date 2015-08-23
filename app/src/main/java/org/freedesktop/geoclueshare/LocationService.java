@@ -1,8 +1,12 @@
 package org.freedesktop.geoclueshare;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
@@ -14,6 +18,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import java.text.DateFormat;
@@ -54,6 +59,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
     private LocationManager locationManager;
     private NetworkListener networkListener;
     private String ggaSentence;
+    private NotificationCompat.Builder builder;
 
     /**
      * The unique identifier for current Android device.
@@ -85,9 +91,15 @@ public class LocationService extends Service implements LocationListener, GpsSta
      */
     public static final int MESSAGE_START_GPS = 1;
 
+    /**
+     * Notification id.
+     */
+    private static final int NOTIFICATION_ID = 007;
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Service started");
+        createNotification();
 
         Zeroconf.attainLock(this);
 
@@ -141,6 +153,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
         Zeroconf.releaseLock();
 
         Log.d(TAG, "Service destroyed");
+        removeNotification();
     }
 
     @Override
@@ -276,5 +289,37 @@ public class LocationService extends Service implements LocationListener, GpsSta
         }
 
         return String.format("%s*%02X", gga, checksum);
+    }
+
+    private void createNotification() {
+        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+
+        builder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.mipmap.ic_location_share)
+                .setLargeIcon(icon)
+                .setContentTitle(getString(R.string.notif_title))
+                .setContentText(getString(R.string.notif_content))
+                .setOngoing(true);
+
+        Intent resultIntent = new Intent(this, MainActivity.class);
+        resultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        PendingIntent resultPendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                resultIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT
+        );
+        builder.setContentIntent(resultPendingIntent);
+
+        NotificationManager notoficationManager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notoficationManager.notify(NOTIFICATION_ID, builder.build());
+    }
+
+    private void removeNotification() {
+        NotificationManager notoficationManager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notoficationManager.cancel(NOTIFICATION_ID);
     }
 }
