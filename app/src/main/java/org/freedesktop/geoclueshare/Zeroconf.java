@@ -124,7 +124,11 @@ public class Zeroconf {
      */
     public void unregisterService() {
         if(serviceInfo != null) {
-            jmdns.unregisterService(serviceInfo);
+            try {
+                jmdns.unregisterService(serviceInfo);
+            } catch (NullPointerException e) {
+                Log.w(TAG, "Can't close a null mDNS service.");
+            }
         }
     }
 }
