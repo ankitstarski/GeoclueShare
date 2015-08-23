@@ -1,3 +1,12 @@
+v1.0
+====
+
+- Get location from listener too, instead of just relying on NmeaListener.
+- Send Geoclue the last known location from Android GPS so that the user might
+  not have to wait longer.
+- Add notification for the background service.
+- Bug fixes.
+
 v1.0-beta
 =========
 
