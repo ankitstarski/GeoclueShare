@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GeoclueShare</string>
+    <string name="main_activity_label">Współdzielenie położenia</string>
+
+    <string name="location_mode_text">Tryb położenia</string>
+    <string name="location_mode_description">Aby współdzielić położenie, tryb musi być ustawiony na wysoki</string>
+    <string name="location_high_accuracy">Wysoki</string>
+    <string name="location_low_accuracy">Niski</string>
+    <string name="service_toggle_text">Współdzielenie położenia</string>
+    <string name="service_toggle_description">Umożliwia współdzielenie położenia z innymi urządzeniami</string>
+    <string name="connected_devices_text">Połączone urządzenia</string>
+    <string name="connected_devices_description">Urządzenie mogą być łączone przez sieć Wi-Fi</string>
+    <string name="action_settings">Ustawienia</string>
+
+    <string name="location_prompt_dialog">Ta aplikacja wymaga wysokiej dokładności położenia. Zmienić ją?</string>
+    <string name="yes">Tak</string>
+    <string name="no">Nie</string>
+
+    <string name="notif_title">Położenie jest współdzielone</string>
+    <string name="notif_content">Należy je wyłączyć, jeśli nie jest używane.</string>
+</resources>
