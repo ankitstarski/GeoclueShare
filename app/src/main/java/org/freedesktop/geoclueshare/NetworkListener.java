@@ -75,13 +75,14 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
 
         Log.d(TAG, "Started Listening");
 
-        mdns = new Zeroconf();
-        mdns.broadcastService(LocationService.deviceId, PORT);
-
         pendingData = new HashMap<String, String>();
 
         try {
             startServer();
+
+            mdns = new Zeroconf();
+            mdns.broadcastService(LocationService.deviceId, PORT);
+
             selector = Selector.open();
             server.register(selector, SelectionKey.OP_ACCEPT);
         } catch (IOException e) {
