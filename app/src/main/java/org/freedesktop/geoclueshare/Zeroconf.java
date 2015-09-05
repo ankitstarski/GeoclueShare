@@ -2,9 +2,11 @@ package org.freedesktop.geoclueshare;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
+import android.text.format.Formatter;
 import android.util.Log;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.HashMap;
 
 import javax.jmdns.JmDNS;
@@ -35,6 +37,7 @@ public class Zeroconf {
     private static WifiManager.MulticastLock multicastLock;
     private JmDNS jmdns;
     private ServiceInfo serviceInfo;
+    private static String ip;
 
     /**
      * The default tag string for Multicast, used in {@link Zeroconf#attainLock(Context)}.
@@ -49,8 +52,10 @@ public class Zeroconf {
      * @param context the context from where it is being called.
      */
     public static void attainLock(Context context) {
-        multicastLock = ((WifiManager) context.getSystemService(Context.WIFI_SERVICE))
-                .createMulticastLock(DEFAULT_MULTICAST_TAG_STRING);
+        WifiManager wifi = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+        ip = Formatter.formatIpAddress(wifi.getConnectionInfo().getIpAddress());
+
+        multicastLock = wifi.createMulticastLock(DEFAULT_MULTICAST_TAG_STRING);
         multicastLock.setReferenceCounted(true);
         multicastLock.acquire();
     }
@@ -63,8 +68,10 @@ public class Zeroconf {
      *                messages.
      */
     public static void attainLock(Context context, String tag) {
-        multicastLock = ((WifiManager) context.getSystemService(Context.WIFI_SERVICE))
-                .createMulticastLock(tag);
+        WifiManager wifi = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+        ip = Formatter.formatIpAddress(wifi.getConnectionInfo().getIpAddress());
+
+        multicastLock = wifi.createMulticastLock(tag);
         multicastLock.setReferenceCounted(true);
         multicastLock.acquire();
     }
@@ -81,7 +88,7 @@ public class Zeroconf {
 
     public Zeroconf() {
         try {
-            jmdns = JmDNS.create();
+            jmdns = JmDNS.create(InetAddress.getByName(ip));
         } catch (IOException e) {
             Log.d(TAG, "Can't start mDNS service");
         }
