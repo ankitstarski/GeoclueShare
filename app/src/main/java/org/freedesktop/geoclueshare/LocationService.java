@@ -92,6 +92,11 @@ public class LocationService extends Service implements LocationListener, GpsSta
     public static final int MESSAGE_START_GPS = 1;
 
     /**
+     * The max allowed age of last known location.
+     */
+    public static final int LAST_KNOWN_LOCATION_MAX_AGE = 24 * 60 * 60 * 1000;
+
+    /**
      * Notification id.
      */
     private static final int NOTIFICATION_ID = 007;
@@ -117,6 +122,11 @@ public class LocationService extends Service implements LocationListener, GpsSta
                         Log.d(TAG, "GPS start");
                         Location loc = locationManager
                                 .getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+                        if (loc != null && System.currentTimeMillis() - loc.getTime() >
+                                LAST_KNOWN_LOCATION_MAX_AGE)
+                            loc = null;
+
                         if (loc != null)
                             NetworkListener.sendData(getGgaFromLocation(loc));
                         break;
