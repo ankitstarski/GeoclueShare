@@ -1,3 +1,10 @@
+v1.1
+====
+
+- Add polish translation.
+- Bug fixes.
+- Reject last known location older than 24 hours.
+
 v1.0
 ====
 
