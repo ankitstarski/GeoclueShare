@@ -2,11 +2,12 @@ package org.freedesktop.geoclueshare;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
-import android.text.format.Formatter;
 import android.util.Log;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 
 import javax.jmdns.JmDNS;
@@ -32,7 +33,7 @@ import javax.jmdns.ServiceInfo;
  * Author: Ankit (Verma) <ankitstarski@gmail.com>
  */
 
-public class Zeroconf {
+class Zeroconf {
     private static final String TAG = "Zeroconf";
     private static WifiManager.MulticastLock multicastLock;
     private JmDNS jmdns;
@@ -44,6 +45,26 @@ public class Zeroconf {
      */
     private static final String DEFAULT_MULTICAST_TAG_STRING = "GeoclueShare";
 
+
+    private static byte[] convertToBytes(int value, ByteOrder order)
+    {
+        byte[] byteArray = new byte[4];
+        int shift;
+        for (int i = 0; i < byteArray.length;
+             i++) {
+
+            if (order == ByteOrder.BIG_ENDIAN)
+                shift = (byteArray.length - 1 - i) * 8; // 24, 16, 8, 0
+            else
+                shift = i * 8; // 0,8,16,24
+
+            byteArray[i] = (byte) (value >>> shift);
+        }
+        return byteArray;
+
+    }
+
+
     /**
      * This function is to be called before Using {@link Zeroconf} class is to be used. <br/>
      * This attains Multicast lock from WiFi service which is requred for mDNS broadcasting or
@@ -51,9 +72,19 @@ public class Zeroconf {
      *
      * @param context the context from where it is being called.
      */
-    public static void attainLock(Context context) {
-        WifiManager wifi = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
-        ip = Formatter.formatIpAddress(wifi.getConnectionInfo().getIpAddress());
+    static void attainLock(Context context) {
+        WifiManager wifi = (WifiManager)context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+        byte[] ipAddress = convertToBytes(wifi.getConnectionInfo().getIpAddress(), ByteOrder.LITTLE_ENDIAN);
+
+        InetAddress myaddr = null;
+        try {
+            myaddr = InetAddress.getByAddress(ipAddress);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        assert myaddr != null;
+        ip =  myaddr.getHostAddress();
 
         multicastLock = wifi.createMulticastLock(DEFAULT_MULTICAST_TAG_STRING);
         multicastLock.setReferenceCounted(true);
@@ -61,34 +92,18 @@ public class Zeroconf {
     }
 
     /**
-     * Same as {@link Zeroconf#attainLock(Context)} but Tag string for the lock can be set.
-     *
-     * @param context the context from where it is being called.
-     * @param tag     a tag for the MulticastLock to identify it in debugging
-     *                messages.
-     */
-    public static void attainLock(Context context, String tag) {
-        WifiManager wifi = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
-        ip = Formatter.formatIpAddress(wifi.getConnectionInfo().getIpAddress());
-
-        multicastLock = wifi.createMulticastLock(tag);
-        multicastLock.setReferenceCounted(true);
-        multicastLock.acquire();
-    }
-
-    /**
      * Releases the lock attained by {@link Zeroconf#attainLock}.
      */
-    public static void releaseLock() {
+    static void releaseLock() {
         if (multicastLock != null) {
             multicastLock.release();
             multicastLock = null;
         }
     }
 
-    public Zeroconf() {
+    Zeroconf() {
         try {
-            jmdns = JmDNS.create(InetAddress.getByName(ip));
+            jmdns = JmDNS.create(InetAddress.getByName(ip), LocationService.deviceId);
         } catch (IOException e) {
             Log.d(TAG, "Can't start mDNS service");
         }
@@ -100,14 +115,14 @@ public class Zeroconf {
      * @param serviceName name of the service to be shoown to other devices.
      * @param port port number
      */
-    public void broadcastService(String serviceName, int port) {
+    void broadcastService(String serviceName, int port) {
         try {
 
             /*
              * Beware of this bug in JmDNS
              * http://stackoverflow.com/questions/12726801/avahi-not-able-to-find-service-creted-by-jmdns
              */
-            HashMap<String, byte[]> properties = new HashMap<String, byte[]>();
+            HashMap<String, byte[]> properties = new HashMap<>();
             String serviceText = "Location Server for Geoclue";
             properties.put("description", serviceText.getBytes());
             properties.put("accuracy", LocationService.accuracy.getBytes());
@@ -129,7 +144,7 @@ public class Zeroconf {
     /**
      * Unregisters the service being broadcasted by {@link Zeroconf#broadcastService}.
      */
-    public void unregisterService() {
+    void unregisterService() {
         if(serviceInfo != null) {
             try {
                 jmdns.unregisterService(serviceInfo);
