@@ -41,18 +41,18 @@ import java.util.Set;
  * tasks such as client connection, disconnection, send or receive data.
  * <p>Call {@link NetworkListener#sendData} to broadcast data to all the clients.</p>
  */
-public class NetworkListener extends AsyncTask<Void, Void, Void> {
+class NetworkListener extends AsyncTask<Void, Void, Void> {
 
     private static final String TAG = "NetworkListener";
     private ServerSocketChannel server = null;
     private Handler handler;
     private static HashMap<String, String> pendingData;
-    Zeroconf mdns;
+    private Zeroconf mdns;
 
     /**
      * Total number of clients currently connected to the application.
      */
-    public static int numberOfClients = 0;
+    static int numberOfClients = 0;
 
     /**
      * The TCP/IP port used for Socket communication.
@@ -64,7 +64,7 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
      */
     private static final int GGA_LENGTH_MAX = 80;
 
-    public NetworkListener(Handler handler) {
+    NetworkListener(Handler handler) {
         this.handler = handler;
     }
 
@@ -75,13 +75,13 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
 
         Log.d(TAG, "Started Listening");
 
-        pendingData = new HashMap<String, String>();
+        pendingData = new HashMap<>();
 
         try {
             startServer();
 
             mdns = new Zeroconf();
-            mdns.broadcastService(LocationService.deviceId, PORT);
+            mdns.broadcastService(LocationService.serviceName, PORT);
 
             selector = Selector.open();
             server.register(selector, SelectionKey.OP_ACCEPT);
@@ -128,8 +128,7 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
                         SocketChannel client = (SocketChannel) key.channel();
                         sendDataToClient(client);
                     }
-                } catch (IOException e) {
-                    continue;
+                } catch (IOException ignored) {
                 }
             }
         }
@@ -144,12 +143,12 @@ public class NetworkListener extends AsyncTask<Void, Void, Void> {
      * @param data The data that is to be broadcasted to all the connected clients at port number
      *             stored inside {@link NetworkListener#PORT}.
      */
-    public static void sendData(String data) {
+    static void sendData(String data) {
         String ggaSentence = data + "\r\n";
 
-        Iterator it = pendingData.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry) it.next();
+        for (Object o : pendingData.entrySet()) {
+            Map.Entry pair = (Map.Entry) o;
+            //noinspection unchecked
             pair.setValue(ggaSentence);
         }
     }

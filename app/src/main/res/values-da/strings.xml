@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GeoclueShare</string>
+    <string name="action_settings">Indstillinger</string>
+    <string name="connected_devices_description">Enheder kan forbinde via Wi-Fi</string>
+    <string name="connected_devices_text">Forbundede enheder</string>
+    <string name="location_high_accuracy">Høj</string>
+    <string name="location_low_accuracy">Lav</string>
+    <string name="location_mode_description">For at kunne dele din placering skal placeringstilstand være sat til høj</string>
+    <string name="location_mode_text">Placeringstilstand</string>
+    <string name="location_prompt_dialog">Dette program har brug for at sætte din placeringstilstand til Høj nøjagtighed. Vil du ændre placeringstilstanden?</string>
+    <string name="main_activity_label">Placeringsdeling</string>
+    <string name="no">Nej</string>
+    <string name="notif_content">Luk hvis du ikke bruger den.</string>
+    <string name="notif_title">Placeringsdeling kører</string>
+    <string name="service_toggle_description">Slå til for at dele din placering med andre enheder</string>
+    <string name="service_toggle_text">Placeringsdeling</string>
+    <string name="yes">Ja</string>
+</resources>

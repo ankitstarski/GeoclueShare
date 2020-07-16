@@ -1,10 +1,12 @@
 package org.freedesktop.geoclueshare;
 
+import android.Manifest;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.GpsStatus;
@@ -18,12 +20,14 @@ import android.os.Looper;
 import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /*
@@ -50,21 +54,26 @@ import java.util.TimeZone;
  * <p>
  * {@code LocationService} is responsible for fetching and handling location data from the GPS in
  * the background.
+ * FIXME: GpsStatus.NemeaListener has been deprecated in api 24 so will have to use OnNmeaMessageListener from 24 and forward.
  * </p>
- * FIXME: It's just a dummy class yet. Add functionality.
  */
 public class LocationService extends Service implements LocationListener, GpsStatus.NmeaListener {
+
 
     private static final String TAG = "LocationService";
     private LocationManager locationManager;
     private NetworkListener networkListener;
     private String ggaSentence;
-    private NotificationCompat.Builder builder;
 
     /**
      * The unique identifier for current Android device.
      */
     public static String deviceId;
+
+    /**
+     * The name to use for the service.
+     */
+    public static String serviceName;
 
     /**
      * The that value goes into the `accuracy` feild of mDNS service's TXT record.
@@ -99,10 +108,11 @@ public class LocationService extends Service implements LocationListener, GpsSta
     /**
      * Notification id.
      */
-    private static final int NOTIFICATION_ID = 007;
+    private static final int NOTIFICATION_ID = 7;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
         Log.d(TAG, "Service started");
         createNotification();
 
@@ -110,16 +120,28 @@ public class LocationService extends Service implements LocationListener, GpsSta
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(),
-                Settings.Secure.ANDROID_ID);
+        deviceId = Settings.Secure.getString(getContentResolver(), "bluetooth_name");
+
+        serviceName = "GeoclueShare@" + deviceId;
 
         Handler handler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
                     case MESSAGE_START_GPS:
+                        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            // TODO: Consider calling
+                            //    ActivityCompat#requestPermissions
+                            // here to request the missing permissions, and then overriding
+                            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                            //                                          int[] grantResults)
+                            // to handle the case where the user grants the permission. See the documentation
+                            // for ActivityCompat#requestPermissions for more details.
+                            return;
+                        }
                         startGps();
                         Log.d(TAG, "GPS start");
+
                         Location loc = locationManager
                                 .getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
@@ -185,6 +207,16 @@ public class LocationService extends Service implements LocationListener, GpsSta
     }
 
     private void startGps() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
                 MIN_TIME_BW_UPDATES_GPS,
@@ -225,13 +257,13 @@ public class LocationService extends Service implements LocationListener, GpsSta
         Boolean hasAltitude = location.hasAltitude();
 
         Date date = new Date(location.getTime());
-        DateFormat format = new SimpleDateFormat("HHmmss");
+        DateFormat format = new SimpleDateFormat("HHmmss", Locale.US);
         format.setTimeZone(TimeZone.getTimeZone("UTC"));
         String time = format.format(date);
 
         if (hasAltitude) {
             gga = "$GPGGA,%s,%s,%s,1,,%.1f,%.1f,M,,M,,";
-            gga = String.format(gga,
+            gga = String.format(Locale.US, gga,
                     time,
                     getLatitudeString(location.getLatitude()),
                     getLongitudeString(location.getLongitude()),
@@ -239,7 +271,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
                     location.getAltitude());
         } else {
             gga = "$GPGGA,%s,%s,%s,1,,%.1f,,M,,M,,";
-            gga = String.format(gga,
+            gga = String.format(Locale.US, gga,
                     time,
                     getLatitudeString(location.getLatitude()),
                     getLongitudeString(location.getLongitude()),
@@ -276,7 +308,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
         double minutes = Math.abs((lat - (int) lat) * 60);
         String symbol = lat >= 0 ? "N" : "S";
 
-        latStr = String.format(latStr, degrees, minutes, symbol);
+        latStr = String.format(Locale.US, latStr, degrees, minutes, symbol);
         return latStr;
     }
 
@@ -287,7 +319,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
         double minutes = Math.abs((lon - (int) lon) * 60);
         String symbol = lon >= 0 ? "E" : "W";
 
-        lonStr = String.format(lonStr, degrees, minutes, symbol);
+        lonStr = String.format(Locale.US, lonStr, degrees, minutes, symbol);
         return lonStr;
     }
 
@@ -304,7 +336,7 @@ public class LocationService extends Service implements LocationListener, GpsSta
     private void createNotification() {
         Bitmap icon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
 
-        builder = new NotificationCompat.Builder(this)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_location_share)
                 .setLargeIcon(icon)
                 .setContentTitle(getString(R.string.notif_title))
@@ -322,14 +354,14 @@ public class LocationService extends Service implements LocationListener, GpsSta
         );
         builder.setContentIntent(resultPendingIntent);
 
-        NotificationManager notoficationManager =
+        NotificationManager notificationManager =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        notoficationManager.notify(NOTIFICATION_ID, builder.build());
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
 
     private void removeNotification() {
-        NotificationManager notoficationManager =
+        NotificationManager notificationManager =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        notoficationManager.cancel(NOTIFICATION_ID);
+        notificationManager.cancel(NOTIFICATION_ID);
     }
 }

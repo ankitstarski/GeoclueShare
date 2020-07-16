@@ -11,12 +11,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.provider.Settings;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.util.Log;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
+
+import java.util.Locale;
 
 /*
  * Copyright (C) 2015 Ankit (Verma)
@@ -38,7 +40,7 @@ import android.widget.TextView;
  * Author: Ankit (Verma) <ankitstarski@gmail.com>
  */
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
@@ -76,6 +78,7 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //noinspection ConstantConditions
         getSupportActionBar().setTitle(R.string.main_activity_label);
         final Intent locationServiceIntent = new Intent(this, LocationService.class);
 
@@ -94,7 +97,7 @@ public class MainActivity extends ActionBarActivity {
                     case MESSAGE_CONNECTED_DEVICES:
                         Bundle bundle = message.getData();
                         int n_clients = bundle.getInt(KEY_CONNECTED_DEVICES);
-                        connectedDevices.setText(n_clients + "");
+                        connectedDevices.setText(String.format(Locale.US, "%d", n_clients));
                         Log.d(TAG, "Connected devices changed");
                         break;
                 }
@@ -110,7 +113,7 @@ public class MainActivity extends ActionBarActivity {
         }
 
         if (isServiceRunning(LocationService.class)) {
-            connectedDevices.setText(NetworkListener.numberOfClients + "");
+            connectedDevices.setText(String.format(Locale.US, "%d", NetworkListener.numberOfClients));
         }
 
         toggleService.setChecked(isServiceRunning(LocationService.class));
@@ -140,7 +143,9 @@ public class MainActivity extends ActionBarActivity {
             }
         }
     }
-
+    /**
+     * FIXME: This need to be rewritten since getRunningServices has been deprecated
+     */
     private boolean isServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
@@ -165,6 +170,7 @@ public class MainActivity extends ActionBarActivity {
                 Log.d(TAG, "Error in detecting location settings");
             }
         } else {
+            //noinspection deprecation - this is only used on pre KITKAT devices so can be used
             String locationProviders = Settings.Secure.getString(getContentResolver(),
                     Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
             return locationProviders.contains("gps");
